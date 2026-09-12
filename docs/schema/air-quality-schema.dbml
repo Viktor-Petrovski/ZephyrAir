@@ -1,0 +1,160 @@
+// ============================================================
+//  Air Quality Alert Service - database schema (DBML)
+//  Paste into https://dbdiagram.io
+//  Source: 01-air-quality-alert-service.md  (Onion / EF Core 9 / SQLite)
+// ============================================================
+
+Project air_quality_alert_service {
+  database_type: 'SQLite'
+  Note: '''
+    Ingests hourly air-quality readings per station, lets users subscribe to
+    specific pollutants at specific stations with personal thresholds, and
+    dispatches alerts when a threshold is crossed.
+
+    Base classes (flattened into each table):
+      BaseEntity              -> Id (uuid PK)
+      BaseAuditableEntity<T>  -> Id + CreatedAt / CreatedById / LastModifiedAt / LastModifiedById
+
+    Base-class assignment:
+      Station, Pollutant, AlertSubscription -> BaseAuditableEntity<string>
+                                        (audit user id = ApplicationUser.Id, the string
+                                         IdentityUser key; auto-filled by AuditInterceptor)
+      Measurement, AlertNotification,
+      EtlSyncLog, InboundEventEntry   -> BaseEntity
+                                        (immutable / system-generated / append-only -
+                                         audit columns would duplicate MeasuredAtUtc /
+                                         SentAtUtc / their own timestamps)
+
+    CreatedById / LastModifiedById logically reference ApplicationUser.Id
+    (audit only - FK lines omitted to keep the diagram readable).
+  '''
+}
+
+enum inbound_event_status {
+  Pending
+  Completed
+  Failed
+}
+
+enum user_role {
+  User
+  Admin
+}
+
+enum measurement_unit {
+  MicrogramsPerCubicMeter [note: 'μg/m³']
+  MilligramsPerCubicMeter [note: 'mg/m³']
+  Ppb                     [note: 'parts per billion']
+  Index                   [note: 'unitless band - e.g. EAQI 1-6']
+}
+
+Table ApplicationUser {
+  Id varchar [pk, note: 'IdentityUser string key']
+  UserName varchar [note: 'inherited from IdentityUser - do NOT redeclare on the entity']
+  Email varchar [note: 'inherited from IdentityUser - do NOT redeclare on the entity']
+  FirstName varchar
+  LastName varchar
+  Role user_role [not null, default: 'User', note: 'custom profile field; emit as a role claim at login for [Authorize(Roles=...)]']
+  Note: 'IdentityUser + profile fields (UserName/Email/etc. come from IdentityUser)'
+}
+
+Table Station {
+  Id uuid [pk]
+  Name varchar [not null]
+  City varchar [not null]
+  Latitude double [not null]
+  Longitude double [not null]
+  ExternalId varchar [unique, note: 'provider station id - upsert key for ETL']
+  CreatedAt datetime
+  CreatedById varchar
+  LastModifiedAt datetime
+  LastModifiedById varchar
+  Note: 'Monitored location - admin-edited reference data (BaseAuditableEntity); populated/upserted by ETL on ExternalId'
+}
+
+Table Pollutant {
+  Id uuid [pk]
+  Code varchar [unique, not null, note: 'PM2_5, PM10, NO2, O3, EAQI']
+  DisplayName varchar [not null]
+  Unit measurement_unit [not null, note: 'canonical unit for this pollutant; EAQI = Index']
+  CreatedAt datetime
+  CreatedById varchar
+  LastModifiedAt datetime
+  LastModifiedById varchar
+  Note: 'Reference / lookup entity - admin-edited (BaseAuditableEntity); seeded'
+}
+
+Table Measurement {
+  Id uuid [pk]
+  StationId uuid [not null, ref: > Station.Id]
+  PollutantId uuid [not null, ref: > Pollutant.Id]
+  Value double [not null, note: 'stored in Pollutant.Unit - normalize at ingestion']
+  MeasuredAtUtc datetime [not null]
+  Note: 'Time-series reading - binary Station x Pollutant + timestamp; immutable, append-only (BaseEntity)'
+
+  indexes {
+    (StationId, PollutantId, MeasuredAtUtc) [unique, name: 'ux_measurement_station_pollutant_time']
+  }
+}
+
+Table AlertSubscription {
+  Id uuid [pk]
+  UserId varchar [not null, ref: > ApplicationUser.Id]
+  StationId uuid [not null, ref: > Station.Id]
+  PollutantId uuid [not null, ref: > Pollutant.Id]
+  ThresholdValue double [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAt datetime
+  CreatedById varchar
+  LastModifiedAt datetime
+  LastModifiedById varchar
+  Note: 'TERNARY relationship - User x Station x Pollutant (BaseAuditableEntity)'
+
+  indexes {
+    (UserId, StationId, PollutantId) [unique, name: 'ux_subscription_user_station_pollutant']
+    (StationId, PollutantId, IsActive) [name: 'ix_subscription_eval']
+  }
+}
+
+Table AlertNotification {
+  Id uuid [pk]
+  AlertSubscriptionId uuid [not null, ref: > AlertSubscription.Id]
+  TriggeringValue double [not null]
+  SentAtUtc datetime [not null]
+  Channel varchar [note: 'e.g. Email']
+  Note: 'Audit of dispatched alerts - immutable, append-only (BaseEntity)'
+
+  indexes {
+    (AlertSubscriptionId, SentAtUtc) [name: 'ix_notification_subscription_time']
+  }
+}
+
+// ---- Shared integration entities (reused verbatim from the blueprint) ----
+
+Table EtlSyncLog {
+  Id uuid [pk]
+  JobName varchar [not null]
+  StartedAt datetime [not null]
+  CompletedAt datetime
+  Success boolean [not null]
+  ErrorMessage text
+  Note: 'One row per ETL / background run'
+
+  indexes {
+    (JobName, StartedAt) [name: 'ix_etlsynclog_job_started']
+  }
+}
+
+Table InboundEventEntry {
+  Id uuid [pk]
+  Payload text [not null, note: 'raw JSON spot reading']
+  Status inbound_event_status [not null, default: 'Pending']
+  ErrorMessage text
+  ReceivedAtUtc datetime
+  ProcessedAtUtc datetime
+  Note: 'Durable DB-backed queue for POST /api/external/measurements'
+
+  indexes {
+    (Status, ReceivedAtUtc) [name: 'ix_inbound_status_received']
+  }
+}
