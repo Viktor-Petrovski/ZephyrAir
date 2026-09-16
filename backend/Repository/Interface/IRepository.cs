@@ -7,10 +7,10 @@ namespace Repository.Interface;
 
 public interface IRepository<T> where T : BaseEntity 
 {
-    Task<T> InsertAsync(T entity);
-    Task<T> UpdateAsync(T entity);
-    Task<T> DeleteAsync(T entity);
-    Task<TR?> GetByIdAsync<TR>(Guid id);
+    Task InsertAsync(T entity);
+    Task UpdateAsync(T entity);
+    Task DeleteAsync(T entity);
+    Task<T?> GetByIdAsync(Guid id);
     Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate);
 
     Task<List<TR>> GetAllAsync<TR>(Expression<Func<T, TR>> selector,
