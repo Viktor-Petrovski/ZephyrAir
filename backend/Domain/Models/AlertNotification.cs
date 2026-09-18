@@ -1,4 +1,5 @@
 using Domain.Common;
+using Domain.Enums;
 
 namespace Domain.Models;
 
@@ -9,5 +10,5 @@ public class AlertNotification : BaseEntity
 
     public double TriggeringValue { get; set; }
     public DateTime SentAtUtc { get; set; }
-    public string? Channel { get; set; }
+    public NotificationChannel Channel { get; set; }
 }

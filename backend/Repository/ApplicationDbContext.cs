@@ -89,6 +89,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<AlertNotification>(e =>
         {
+            e.Property(n => n.Channel).HasConversion<string>();
+
             e.HasOne(n => n.AlertSubscription)
                 .WithMany(a => a.Notifications)
                 .HasForeignKey(n => n.AlertSubscriptionId)
