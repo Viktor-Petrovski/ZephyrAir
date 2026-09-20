@@ -1,2 +1,7 @@
 <Solution>
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Repository/Repository.csproj" />
+  <Project Path="Service/Service.csproj" />
+  <Project Path="Web/Web.csproj" />
+  <Project Path="Tests/Tests.csproj" />
 </Solution>

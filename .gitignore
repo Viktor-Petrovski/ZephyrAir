@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# SQLite development databases (schema is rebuilt from EF migrations)
+*.db
+*.db-shm
+*.db-wal
