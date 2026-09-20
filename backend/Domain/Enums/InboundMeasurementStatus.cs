@@ -1,6 +1,6 @@
 namespace Domain.Enums;
 
-public enum InboundEventStatus
+public enum InboundMeasurementStatus
 {
     Pending,
     Completed,

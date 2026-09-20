@@ -20,7 +20,7 @@ Project air_quality_alert_service {
                                         (audit user id = ApplicationUser.Id, the string
                                          IdentityUser key; auto-filled by AuditInterceptor)
       Measurement, AlertNotification,
-      EtlSyncLog, InboundEventEntry   -> BaseEntity
+      EtlSyncLog, InboundMeasurementEntry   -> BaseEntity
                                         (immutable / system-generated / append-only -
                                          audit columns would duplicate MeasuredAtUtc /
                                          SentAtUtc / their own timestamps)
@@ -145,7 +145,7 @@ Table EtlSyncLog {
   }
 }
 
-Table InboundEventEntry {
+Table InboundMeasurementEntry {
   Id uuid [pk]
   Payload text [not null, note: 'raw JSON spot reading']
   Status inbound_event_status [not null, default: 'Pending']

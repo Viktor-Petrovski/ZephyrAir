@@ -53,7 +53,7 @@ one of the indexes above, so those checks are index-backed.
 |-------|------|---------|
 | `(JobName, StartedAt)` — `ix_etl_sync_log_job_started` | non-unique | "Recent runs of job X" — the operational query for monitoring ETL health. |
 
-## InboundEventEntry
+## InboundMeasurementEntry
 
 | Index | Kind | Purpose |
 |-------|------|---------|

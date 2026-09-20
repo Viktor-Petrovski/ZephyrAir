@@ -16,7 +16,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<AlertSubscription> AlertSubscriptions { get; set; }
     public DbSet<AlertNotification> AlertNotifications { get; set; }
     public DbSet<EtlSyncLog> EtlSyncLogs { get; set; }
-    public DbSet<InboundEventEntry> InboundEventEntries { get; set; }
+    public DbSet<InboundMeasurementEntry> InboundMeasurementEntries { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -30,7 +30,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<Station>(e =>
         {
-            e.Property(s => s.Name).IsRequired();
             e.Property(s => s.City).IsRequired();
             e.HasIndex(s => s.ExternalId).IsUnique();
         });
@@ -107,7 +106,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasDatabaseName("ix_etl_sync_log_job_started");
         });
 
-        builder.Entity<InboundEventEntry>(e =>
+        builder.Entity<InboundMeasurementEntry>(e =>
         {
             e.Property(i => i.Status).HasConversion<string>();
             e.HasIndex(i => new { i.Status, i.ReceivedAtUtc })

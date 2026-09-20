@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Domain.Common;
 using Domain.Dto;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +79,12 @@ public class Repository<T>(ApplicationDbContext context)
         if (predicate != null)
             query = query.Where(predicate);
 
+        if (pageSize < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageSize), pageSize, "Page size must be at least 1.");
+
+        if (pageNumber < 1)
+            pageNumber = 1;
+
         var totalCount = await query.CountAsync();
 
         if (orderBy != null)
@@ -95,7 +101,8 @@ public class Repository<T>(ApplicationDbContext context)
             Items = items,
             TotalCount = totalCount,
             PageNumber = pageNumber,
-            PageSize = pageSize
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
         };
     }
 
