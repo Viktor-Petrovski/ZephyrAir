@@ -4,5 +4,10 @@ namespace Service.Interface;
 
 public interface IAirQualityApiClient
 {
-    Task<List<ExternalMeasurementDto>> FetchLatestAsync(CancellationToken cancellationToken = default);
+    /// Reads the provider's current readings for one point into a snapshot.
+    Task<AirQualitySnapshot> FetchCurrentAsync(
+        double latitude,
+        double longitude,
+        IReadOnlyCollection<string> pollutantCodes,
+        CancellationToken cancellationToken = default);
 }

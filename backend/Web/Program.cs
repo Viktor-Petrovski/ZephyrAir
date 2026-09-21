@@ -75,6 +75,18 @@ builder.Services.AddHttpClient<IGeocodingApiClient, GeocodingApiClient>(client =
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(openMeteo.RequestTimeoutSeconds * 4);
     });
 
+builder.Services.AddHttpClient<IAirQualityApiClient, AirQualityApiClient>(client =>
+    {
+        client.BaseAddress = new Uri(openMeteo.AirQualityBaseUrl);
+        client.Timeout = Timeout.InfiniteTimeSpan;
+    })
+    .AddStandardResilienceHandler(options =>
+    {
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(openMeteo.RequestTimeoutSeconds);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(openMeteo.RequestTimeoutSeconds * 3);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(openMeteo.RequestTimeoutSeconds * 4);
+    });
+
 
 builder.Services.AddRateLimiter(options =>
 {
