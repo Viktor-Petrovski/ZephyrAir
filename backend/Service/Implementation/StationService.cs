@@ -20,35 +20,27 @@ public class StationService(
     public Task<Station?> GetByIdAsync(Guid id) => repository.GetByIdAsync(id);
 
     public async Task<Station?> GetByNameAsync(string city, string? countryCode = null)
-    {
-        if (string.IsNullOrWhiteSpace(city))
-            return null;
+        => string.IsNullOrWhiteSpace(city) ? null
+            : (await GetAllAsync(city, countryCode)).FirstOrDefault();
 
-        // Case-insensitive
-        var name = city.Trim().ToLower();
+    public async Task<List<Station>> GetAllAsync(string? city = null, string? countryCode = null)
+    {
         var country = NormalizeCountry(countryCode);
 
-        var matches = await repository.GetAllAsync(
-            selector: s => s,
-            predicate: s => s.City.ToLower() == name && 
-                            (country == null || s.CountryCode == country));
-
-        return matches.FirstOrDefault();
-    }
-
-    public Task<List<Station>> GetAllAsync(string? city = null, string? countryCode = null)
-    {
-        // Matches GetByNameAsync: case-insensitive, country optional.
-        var name = string.IsNullOrWhiteSpace(city) ? null : city.Trim().ToLower();
-        var country = NormalizeCountry(countryCode);
-
+        // Only the country filter goes to the database. 
         Expression<Func<Station, bool>>? predicate =
-            name == null && country == null
-                ? null
-                : s => (name == null || s.City.ToLower() == name)
-                       && (country == null || s.CountryCode == country);
+            country == null ? null : s => s.CountryCode == country;
 
-        return repository.GetAllAsync(s => s, predicate, orderBy: q => q.OrderBy(s => s.City));
+        var stations = await repository.GetAllAsync(
+            s => s, predicate, 
+            orderBy: q => q.OrderBy(s => s.City)
+            );
+
+        if (string.IsNullOrWhiteSpace(city))
+            return stations;
+
+        var name = city.Trim().ToLower();
+        return stations.Where(s => s.City.ToLower() == name).ToList();
     }
 
     public Task<PaginatedResult<Station>> GetPagedAsync(int pageNumber, int pageSize)
