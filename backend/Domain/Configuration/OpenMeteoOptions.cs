@@ -16,9 +16,6 @@ public class OpenMeteoOptions
     // Null leaves the provider default.
     public string? Language { get; set; }
 
-    public int FetchIntervalMinutes { get; set; } = 60;
-    public int DrainIntervalSeconds { get; set; } = 60;
-
     // Cities geocoded into Stations on first run, so a fresh database has a work list.
     public string[] BootstrapCities { get; set; } = [];
 
