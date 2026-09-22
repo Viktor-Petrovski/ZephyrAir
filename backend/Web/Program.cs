@@ -37,7 +37,9 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 // --- Domain services ---
 builder.Services.AddScoped<IPollutantService, PollutantService>();
 builder.Services.AddScoped<IStationService, StationService>();
+builder.Services.AddScoped<IMeasurementService, MeasurementService>();
 builder.Services.AddScoped<IInboundMeasurementEntryService, InboundMeasurementEntryService>();
+builder.Services.AddScoped<IInboundMeasurementEntryProcessor, InboundMeasurementEntryProcessor>();
 builder.Services.AddScoped<IEtlSyncService, EtlSyncService>();
 builder.Services.AddScoped<IReferenceDataSeeder, ReferenceDataSeeder>();
 
@@ -133,6 +135,21 @@ builder.Services.AddQuartz(options =>
         
         o.ForJob(jobKey).WithIdentity("etl-sync-trigger")
             .WithCronSchedule("0 0 * * * ?")
+            .WithDescription(description);
+    });
+});
+
+builder.Services.AddQuartz(options =>
+{
+    var jobKey = new JobKey("inbound-processor-trigger", "inbound");
+    options.AddJob<InboundMeasurementEntryJob>(o => o.WithIdentity(jobKey));
+
+    options.AddTrigger(o =>
+    {
+        var description = "Processing pending inbound entries";
+        
+        o.ForJob(jobKey).WithIdentity("inbound-processor-trigger")
+            .WithCronSchedule("0 * * * * ?")
             .WithDescription(description);
     });
 });

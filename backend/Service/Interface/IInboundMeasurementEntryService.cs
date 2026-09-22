@@ -12,4 +12,8 @@ public interface IInboundMeasurementEntryService
     
     /// Optional filtering with stationId and status
     Task<List<InboundMeasurementEntry>> GetAllAsync(Guid? stationId, InboundMeasurementStatus? status);
+
+    /// Reads an entry's payload back into a snapshot, with the same JSON settings
+    /// CreateAsync wrote it with. Throws when the payload cannot be read.
+    AirQualitySnapshot ReadSnapshot(InboundMeasurementEntry entry);
 }

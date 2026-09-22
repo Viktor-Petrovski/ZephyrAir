@@ -46,5 +46,12 @@ public class InboundMeasurementEntryService(IRepository<InboundMeasurementEntry>
             predicate: x => 
                 (stationId == null || x.StationId == stationId) && (status == null || x.Status == status)
         );
+
+    // Deserialize only returns null for a payload that is literally "null";
+    // malformed JSON throws on its own.
+    public AirQualitySnapshot ReadSnapshot(InboundMeasurementEntry entry)
+        => JsonSerializer.Deserialize<AirQualitySnapshot>(entry.Payload, JsonOptions)
+           ?? throw new InvalidOperationException(
+               $"Inbound measurement entry '{entry.Id}' has no snapshot in its payload.");
     
 }
