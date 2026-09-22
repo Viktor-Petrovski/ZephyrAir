@@ -6,8 +6,10 @@ using Repository;
 using Repository.Implementation;
 using Repository.Interface;
 using Domain.Configuration;
+using Quartz;
 using Service.Implementation;
 using Service.Interface;
+using Service.Jobs;
 using Web.Controllers;
 using Web.Interceptor;
 
@@ -113,6 +115,28 @@ builder.Services.AddRateLimiter(options =>
             "Too many cities added from this address. Try again in a minute.", token);
     };
 });
+
+builder.Services.AddQuartzHostedService();
+
+builder.Services.AddQuartz(options =>
+{
+    var jobKey = new JobKey("etl-sync-trigger", "etl");
+    options.AddJob<EtlJob>(o => o.WithIdentity(jobKey));
+
+    options.AddTrigger(o =>
+    {
+        var description = 
+            "Uses IAirQualityApiClient to fetch latest air quality readings " + 
+            "for all the stored stations in the db and sends inserts them into " +
+            "the InboundMeasurementEntry repository that will be later used by " +
+            "IInboundMeasurementEntryProcessor.";
+        
+        o.ForJob(jobKey).WithIdentity("etl-sync-trigger")
+            .WithCronSchedule("0 0 * * * ?")
+            .WithDescription(description);
+    });
+});
+
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
