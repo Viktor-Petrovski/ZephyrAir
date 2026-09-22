@@ -36,6 +36,7 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IPollutantService, PollutantService>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IInboundMeasurementEntryService, InboundMeasurementEntryService>();
+builder.Services.AddScoped<IEtlSyncService, EtlSyncService>();
 
 // AddIdentityCore does not bring in data protection (AddIdentity would), and
 // AddDefaultTokenProviders below needs IDataProtectionProvider to construct
