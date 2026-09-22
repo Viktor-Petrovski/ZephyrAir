@@ -111,6 +111,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.Property(i => i.Status).HasConversion<string>();
             e.HasIndex(i => new { i.Status, i.ReceivedAtUtc })
                 .HasDatabaseName("ix_inbound_status_received");
+
+            // Restrict: a station can't be deleted while inbound entries still point at it.
+            e.HasOne<Station>()
+                .WithMany()
+                .HasForeignKey(i => i.StationId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

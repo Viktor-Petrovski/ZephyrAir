@@ -5,6 +5,9 @@ namespace Domain.Models;
 
 public class InboundMeasurementEntry : BaseEntity
 {
+    public Guid StationId { get; set; }
+
+    /// The AirQualitySnapshot, stored as JSON text.
     public string Payload { get; set; } = string.Empty;
     public InboundMeasurementStatus Status { get; set; }
     public string? ErrorMessage { get; set; }

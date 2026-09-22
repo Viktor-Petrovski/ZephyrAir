@@ -33,7 +33,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
 // --- Domain services ---
+builder.Services.AddScoped<IPollutantService, PollutantService>();
 builder.Services.AddScoped<IStationService, StationService>();
+builder.Services.AddScoped<IInboundMeasurementEntryService, InboundMeasurementEntryService>();
 
 // AddIdentityCore does not bring in data protection (AddIdentity would), and
 // AddDefaultTokenProviders below needs IDataProtectionProvider to construct

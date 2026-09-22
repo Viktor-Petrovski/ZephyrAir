@@ -68,7 +68,7 @@ public class StationsController(IStationService service) : ControllerBase
 
     // TODO implement
     /// ADMIN ONLY: stops tracking a city and deletes every reading recorded for it.
-    /// Refused while an alert subscription still points at the station.
+    /// Refused while an alert subscription or an inbound entry still points at the station.
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult<StationResponse>> Delete(Guid id)
     {
@@ -83,9 +83,10 @@ public class StationsController(IStationService service) : ControllerBase
         }
         catch (DbUpdateException)
         {
-            // AlertSubscription -> Station is ON DELETE RESTRICT, so the database refuses
-            // rather than orphaning someone's alert. Expected, not a server fault.
-            return Conflict($"Station '{id}' still has alert subscriptions and cannot be deleted.");
+            // Both AlertSubscription and InboundMeasurementEntry reference Station with
+            // ON DELETE RESTRICT, and the database does not say which one refused.
+            // Expected, not a server fault.
+            return Conflict($"Station '{id}' still has alert subscriptions or inbound readings and cannot be deleted.");
         }
     }
 
