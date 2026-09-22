@@ -37,6 +37,7 @@ builder.Services.AddScoped<IPollutantService, PollutantService>();
 builder.Services.AddScoped<IStationService, StationService>();
 builder.Services.AddScoped<IInboundMeasurementEntryService, InboundMeasurementEntryService>();
 builder.Services.AddScoped<IEtlSyncService, EtlSyncService>();
+builder.Services.AddScoped<IReferenceDataSeeder, ReferenceDataSeeder>();
 
 // AddIdentityCore does not bring in data protection (AddIdentity would), and
 // AddDefaultTokenProviders below needs IDataProtectionProvider to construct
@@ -117,6 +118,11 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    await scope.ServiceProvider.GetRequiredService<IReferenceDataSeeder>().SeedAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
